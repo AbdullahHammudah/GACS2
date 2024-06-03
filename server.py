@@ -7,22 +7,24 @@ CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
 
-def handle_audio(client_socket):
+speaking_client = None
+clients = []
+
+def handle_audio_stream(client_socket):
     p = pyaudio.PyAudio()
-    stream = p.open(format=FORMAT,
-                    channels=CHANNELS,
-                    rate=RATE,
-                    output=True,
-                    frames_per_buffer=CHUNK)
+    stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, output=True, frames_per_buffer=CHUNK)
     
     while True:
         try:
             data = client_socket.recv(CHUNK)
             if not data:
                 break
-            stream.write(data)
+            if speaking_client == client_socket:
+                for client in clients:
+                    if client != client_socket:
+                        client.sendall(data)
         except Exception as e:
-            print("Error:", e)
+            print("Audio stream error:", e)
             break
     
     stream.stop_stream()
@@ -31,14 +33,15 @@ def handle_audio(client_socket):
 
 def handle_client(client_socket, client_address):
     global speaking_client
-    audio_thread = threading.Thread(target=handle_audio, args=(client_socket,))
+    clients.append(client_socket)
+    audio_thread = threading.Thread(target=handle_audio_stream, args=(client_socket,))
     audio_thread.start()
     
     while True:
+        data = client_socket.recv(1024)
+        if not data:
+            break
         try:
-            data = client_socket.recv(1024)
-            if not data:
-                break
             request = data.decode().strip()
             if request == 'S':
                 if speaking_client is None:
@@ -54,15 +57,16 @@ def handle_client(client_socket, client_address):
                     client_socket.send("You are not the current speaker.".encode())
             else:
                 client_socket.send("Invalid command.".encode())
-        except Exception as e:
-            print("Error:", e)
-            break
+        except UnicodeDecodeError as e:
+            print("Decoding error:", e)
+            continue
+
+    client_socket.close()
+    clients.remove(client_socket)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(('0.0.0.0', 9999))
 server.listen(5)
-
-speaking_client = None
 
 while True:
     client_socket, client_address = server.accept()

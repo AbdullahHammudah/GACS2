@@ -21,8 +21,7 @@ def record_and_send(client_socket):
     print("Recording and sending...")
     while True:
         try:
-            # data = stream.read(CHUNK, exception_on_overflow=False)
-            data = b'\x00' * CHUNK  # Constant byte sequence
+            data = stream.read(CHUNK, exception_on_overflow=False)
             print("Sending data...")
             client_socket.sendall(data)
         except Exception as e:
