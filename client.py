@@ -47,6 +47,7 @@ def start_client():
             response = input("Press Enter to start speaking: ")
             if response == "":
                 threading.Thread(target=start_voice).start()
+                break  # Exit loop after starting voice communication
         elif command == "F":
             break
 
