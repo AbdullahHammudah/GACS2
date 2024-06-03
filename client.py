@@ -1,5 +1,6 @@
 import socket
 import threading
+import queue
 import pyaudio
 
 # Client configuration
@@ -15,45 +16,36 @@ RATE = 44100
 # Initialize PyAudio
 p = pyaudio.PyAudio()
 
-def start_client():
+def send_command(command):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        client_socket.connect((SERVER_HOST, SERVER_PORT))
-        print("Connected to server.")
-    except Exception as e:
-        print(f"Error connecting to server: {e}")
-        return
+    client_socket.connect((SERVER_HOST, SERVER_PORT))
+    client_socket.sendall(command.encode())
+    client_socket.close()
 
-    def send_request():
-        while True:
-            command = input("Type 'SPEAK' to request to speak or 'FINISH' to finish speaking: ")
-            try:
-                client_socket.sendall(command.encode())
-                if command == "SPEAK":
-                    response = client_socket.recv(1024)
-                    if response.decode() == "WAIT":
-                        print("Waiting for turn to speak...")
-                    elif response.decode() == "START_SPEAK":
-                        print("You can start speaking.")
-                        record_and_send(client_socket)
-                elif command == "FINISH":
-                    print("You finished speaking.")
-            except Exception as e:
-                print(f"Error sending request: {e}")
-                break
+def send_voice():
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((SERVER_HOST, SERVER_PORT))
 
-    def record_and_send(client_socket):
-        stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
-        print("Recording and sending...")
-        while True:
-            try:
-                data = stream.read(CHUNK, exception_on_overflow=False)
-                client_socket.sendall(data)
-            except Exception as e:
-                print(f"Error recording and sending data: {e}")
-                break
+    stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+    print("Recording and sending...")
+    while True:
+        try:
+            data = stream.read(CHUNK, exception_on_overflow=False)
+            client_socket.sendall(data)
+        except Exception as e:
+            print(f"Error recording and sending data: {e}")
+            break
 
-    threading.Thread(target=send_request).start()
+def start_client():
+    while True:
+        command = input("Type 'SPEAK' to request to speak or 'FINISH' to finish speaking: ")
+        send_command(command)
+        if command == "SPEAK":
+            response = input("Press Enter to start speaking: ")
+            if response == "":
+                threading.Thread(target=send_voice).start()
+        elif command == "FINISH":
+            break
 
 if __name__ == "__main__":
     start_client()
