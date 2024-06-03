@@ -1,63 +1,63 @@
 import socket
 import threading
+import pyaudio
 
-# Server configuration
-HOST = '0.0.0.0'  # Listen on all interfaces
-PORT = 5000
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
+CHUNK = 1024
 
-clients = []
-speaking_client = None
-speaking_lock = threading.Lock()
-
-def broadcast(data, except_client=None):
-    for client in clients:
-        if client != except_client:
-            try:
-                client.sendall(data)
-            except Exception as e:
-                print(f"Error sending data to client: {e}")
-                clients.remove(client)
-
-def handle_commands(client_socket):
-    global speaking_client
+def handle_audio(client_socket):
+    p = pyaudio.PyAudio()
+    stream = p.open(format=FORMAT,
+                    channels=CHANNELS,
+                    rate=RATE,
+                    output=True,
+                    frames_per_buffer=CHUNK)
+    
     while True:
         try:
-            command = client_socket.recv(1).decode().strip()
-            if not command:
+            data = client_socket.recv(CHUNK)
+            if not data:
                 break
-
-            if command == "S" and (speaking_client is None or speaking_client == client_socket):
-                speaking_client = client_socket
-                broadcast("START_SPEAK".encode(), except_client=client_socket)
-            elif command == "F" and speaking_client == client_socket:
-                speaking_client = None
-                broadcast("END_SPEAK".encode())
-            elif command == "V" and speaking_client == client_socket:
-                voice_data = client_socket.recv(1024)
-                broadcast(voice_data, except_client=client_socket)
-            else:
-                client_socket.sendall(b'WAIT')  # Notify client to wait
+            stream.write(data)
         except Exception as e:
-            print(f"Error handling command: {e}")
+            print("Error:", e)
             break
+    
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
 
-    if speaking_client == client_socket:
-        speaking_client = None
-
-    client_socket.close()
-    clients.remove(client_socket)
-
-def start_server():
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((HOST, PORT))
-    server_socket.listen(5)
-    print(f"Server listening on {HOST}:{PORT}")
-
+def handle_client(client_socket, client_address):
+    global speaking_client
+    audio_thread = threading.Thread(target=handle_audio, args=(client_socket,))
+    audio_thread.start()
+    
     while True:
-        client_socket, addr = server_socket.accept()
-        print(f"Connection from {addr}")
-        clients.append(client_socket)
-        threading.Thread(target=handle_commands, args=(client_socket,)).start()
+        request = client_socket.recv(1024).decode()
+        if request == 'S':
+            if speaking_client is None:
+                speaking_client = client_socket
+                client_socket.send("Permission granted. You can speak now.".encode())
+            else:
+                client_socket.send("Another client is speaking. Please wait.".encode())
+        elif request == 'F':
+            if speaking_client == client_socket:
+                speaking_client = None
+                client_socket.send("You finished speaking. Waiting for next speaker.".encode())
+            else:
+                client_socket.send("You are not the current speaker.".encode())
+        else:
+            client_socket.send("Invalid command.".encode())
 
-if __name__ == "__main__":
-    start_server()
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(('0.0.0.0', 9999))
+server.listen(5)
+
+speaking_client = None
+
+while True:
+    client_socket, client_address = server.accept()
+    client_handler = threading.Thread(target=handle_client, args=(client_socket, client_address))
+    client_handler.start()

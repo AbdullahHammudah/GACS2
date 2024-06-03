@@ -1,27 +1,37 @@
 import socket
+import pyaudio
 
-# Client configuration
-SERVER_HOST = '192.168.10.2'
-SERVER_PORT = 5000
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
+CHUNK = 1024
 
-def start_client():
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((SERVER_HOST, SERVER_PORT))
-    print("Connected to server.")
+def send_command(command):
+    client_socket.send(command.encode())
+    response = client_socket.recv(1024).decode()
+    print(response)
 
-    while True:
-        command = input("Type 'S' to request to speak or 'F' to finish speaking: ")
-        client_socket.sendall(command.encode())
-        response = client_socket.recv(1024).decode()
-        if response == "WAIT":
-            print("Another user is already speaking. Please wait.")
-        elif response == "START_SPEAK":
-            print("You can start speaking.")
-        elif response == "END_SPEAK":
-            print("You finished speaking.")
-            break
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect(('192.168.10.2', 9999))
 
-    client_socket.close()
+audio_stream = pyaudio.PyAudio().open(
+    format=FORMAT,
+    channels=CHANNELS,
+    rate=RATE,
+    output=True,
+    frames_per_buffer=CHUNK
+)
 
-if __name__ == "__main__":
-    start_client()
+while True:
+    command = input("Enter command (S/F): ").strip().upper()
+    if command == 'S' or command == 'F':
+        send_command(command)
+    else:
+        print("Invalid command. Please enter 'S' or 'F'.")
+
+    if command == 'S':
+        while True:
+            data = client_socket.recv(CHUNK)
+            audio_stream.write(data)
+            if not data:
+                break
