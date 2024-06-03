@@ -12,7 +12,7 @@ def send_command(command):
     print(response)
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(('SERVER_IP', 9999))
+client_socket.connect(('192.168.10.2', 9999))
 
 audio_stream = pyaudio.PyAudio().open(
     format=FORMAT,
