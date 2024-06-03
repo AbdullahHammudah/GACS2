@@ -5,7 +5,9 @@ import threading
 HOST = '0.0.0.0'  # Listen on all interfaces
 PORT = 5000
 
-clients = ['192.168.10.3', '192.168.10.4']
+clients = []
+speaking_client = None
+speaking_lock = threading.Lock()
 
 def broadcast(data, except_client=None):
     for client in clients:
@@ -17,15 +19,26 @@ def broadcast(data, except_client=None):
                 clients.remove(client)
 
 def handle_client(client_socket):
+    global speaking_client
     while True:
         try:
             data = client_socket.recv(1024)
             if not data:
                 break
-            broadcast(data, except_client=client_socket)
+
+            with speaking_lock:
+                if speaking_client is None or speaking_client == client_socket:
+                    speaking_client = client_socket
+                    broadcast(data, except_client=client_socket)
+                else:
+                    client_socket.sendall(b'WAIT')  # Notify client to wait
         except Exception as e:
             print(f"Client connection error: {e}")
             break
+
+    with speaking_lock:
+        if speaking_client == client_socket:
+            speaking_client = None
 
     client_socket.close()
     clients.remove(client_socket)

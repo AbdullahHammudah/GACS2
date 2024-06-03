@@ -1,7 +1,6 @@
 import socket
 import threading
 import pyaudio
-import time
 
 # Client configuration
 SERVER_HOST = '192.168.10.2'
@@ -22,8 +21,14 @@ def record_and_send(client_socket):
     while True:
         try:
             data = stream.read(CHUNK, exception_on_overflow=False)
-            print("Sending data...")
             client_socket.sendall(data)
+            response = client_socket.recv(4)
+            if response == b'WAIT':
+                print("Waiting for turn to speak...")
+                while True:
+                    response = client_socket.recv(4)
+                    if response != b'WAIT':
+                        break
         except Exception as e:
             print(f"Error recording and sending data: {e}")
             break
@@ -36,7 +41,6 @@ def receive_and_play(client_socket):
             data = client_socket.recv(CHUNK)
             if not data:
                 break
-            print("Playing data...")
             stream.write(data)
         except Exception as e:
             print(f"Error receiving data: {e}")
