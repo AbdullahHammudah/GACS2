@@ -12,15 +12,16 @@ def start_client():
 
     def send_request():
         while True:
-            request = input("Type 'SPEAK' to request to speak or 'FINISH' to finish speaking: ")
+            command = input("Type 'SPEAK' to request to speak or 'FINISH' to finish speaking: ")
             try:
-                client_socket.sendall(request.encode())
-                response = client_socket.recv(1024)
-                if response.decode() == "WAIT":
-                    print("Waiting for turn to speak...")
-                elif response.decode() == "START_SPEAK":
-                    print("You can start speaking.")
-                elif response.decode() == "END_SPEAK":
+                client_socket.sendall(command.encode())
+                if command == "SPEAK":
+                    response = client_socket.recv(1024)
+                    if response.decode() == "WAIT":
+                        print("Waiting for turn to speak...")
+                    elif response.decode() == "START_SPEAK":
+                        print("You can start speaking.")
+                elif command == "FINISH":
                     print("You finished speaking.")
             except Exception as e:
                 print(f"Error sending request: {e}")
