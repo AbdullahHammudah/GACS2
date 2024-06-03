@@ -22,16 +22,25 @@ def handle_client(client_socket):
     global speaking_client
     while True:
         try:
-            data = client_socket.recv(1024)
-            if not data:
+            request = client_socket.recv(1024).decode()
+            if not request:
                 break
 
-            with speaking_lock:
-                if speaking_client is None or speaking_client == client_socket:
-                    speaking_client = client_socket
-                    broadcast(data, except_client=client_socket)
-                else:
-                    client_socket.sendall(b'WAIT')  # Notify client to wait
+            if request == "SPEAK":
+                with speaking_lock:
+                    if speaking_client is None:
+                        speaking_client = client_socket
+                        client_socket.sendall(b"ALLOW")
+                    else:
+                        client_socket.sendall(b"WAIT")
+            
+            elif request == "FINISH":
+                with speaking_lock:
+                    if speaking_client == client_socket:
+                        speaking_client = None
+            
+            elif speaking_client == client_socket:
+                broadcast(request.encode(), except_client=client_socket)
         except Exception as e:
             print(f"Client connection error: {e}")
             break
