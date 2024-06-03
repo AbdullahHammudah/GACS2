@@ -22,7 +22,7 @@ def handle_commands(client_socket):
     global speaking_client
     while True:
         try:
-            command = client_socket.recv(1024).decode().strip()
+            command = client_socket.recv(1).decode().strip()
             if not command:
                 break
 
@@ -32,6 +32,9 @@ def handle_commands(client_socket):
             elif command == "F" and speaking_client == client_socket:
                 speaking_client = None
                 broadcast("END_SPEAK".encode())
+            elif command == "V" and speaking_client == client_socket:
+                voice_data = client_socket.recv(1024)
+                broadcast(voice_data, except_client=client_socket)
             else:
                 client_socket.sendall(b'WAIT')  # Notify client to wait
         except Exception as e:
