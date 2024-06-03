@@ -5,7 +5,7 @@ import threading
 HOST = '0.0.0.0'  # Listen on all interfaces
 PORT = 5000
 
-clients = []
+clients = ['192.168.10.4', '192.168.10.3']
 speaking_client = None
 
 def broadcast(data, except_client=None):
@@ -21,7 +21,7 @@ def handle_client(client_socket):
     global speaking_client
     while True:
         try:
-            data = client_socket.recv(1024)
+            data = client_socket.recv(512)
             if not data:
                 break
             if speaking_client is None or speaking_client == client_socket:
