@@ -35,21 +35,28 @@ def handle_client(client_socket, client_address):
     audio_thread.start()
     
     while True:
-        request = client_socket.recv(1024).decode().strip()
-        if request == 'S':
-            if speaking_client is None:
-                speaking_client = client_socket
-                client_socket.send("Permission granted. You can speak now.".encode())
+        try:
+            data = client_socket.recv(1024)
+            if not data:
+                break
+            request = data.decode().strip()
+            if request == 'S':
+                if speaking_client is None:
+                    speaking_client = client_socket
+                    client_socket.send("Permission granted. You can speak now.".encode())
+                else:
+                    client_socket.send("Another client is speaking. Please wait.".encode())
+            elif request == 'F':
+                if speaking_client == client_socket:
+                    speaking_client = None
+                    client_socket.send("You finished speaking. Waiting for next speaker.".encode())
+                else:
+                    client_socket.send("You are not the current speaker.".encode())
             else:
-                client_socket.send("Another client is speaking. Please wait.".encode())
-        elif request == 'F':
-            if speaking_client == client_socket:
-                speaking_client = None
-                client_socket.send("You finished speaking. Waiting for next speaker.".encode())
-            else:
-                client_socket.send("You are not the current speaker.".encode())
-        else:
-            client_socket.send("Invalid command.".encode())
+                client_socket.send("Invalid command.".encode())
+        except Exception as e:
+            print("Error:", e)
+            break
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(('0.0.0.0', 9999))
