@@ -18,7 +18,7 @@ audio_stream = pyaudio.PyAudio().open(
     format=FORMAT,
     channels=CHANNELS,
     rate=RATE,
-    output=True,
+    input=True,
     frames_per_buffer=CHUNK
 )
 
@@ -31,7 +31,5 @@ while True:
 
     if command == 'S':
         while True:
-            data = client_socket.recv(CHUNK)
-            audio_stream.write(data)
-            if not data:
-                break
+            data = audio_stream.read(CHUNK)
+            client_socket.send(data)
