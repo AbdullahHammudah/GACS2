@@ -43,7 +43,7 @@ def start_client():
         if command == "SPEAK":
             response = input("Press Enter to start speaking: ")
             if response == "":
-                threading.Thread(target=send_voice).start()
+                threading.Thread(target=send_voice).start()  # Start voice communication thread
         elif command == "FINISH":
             break
 
