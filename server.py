@@ -35,7 +35,7 @@ def handle_client(client_socket, client_address):
     audio_thread.start()
     
     while True:
-        request = client_socket.recv(1024).decode()
+        request = client_socket.recv(1024).decode().strip()
         if request == 'S':
             if speaking_client is None:
                 speaking_client = client_socket
