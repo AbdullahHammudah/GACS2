@@ -17,8 +17,12 @@ p = pyaudio.PyAudio()
 
 def start_client():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((SERVER_HOST, SERVER_PORT))
-    print("Connected to server.")
+    try:
+        client_socket.connect((SERVER_HOST, SERVER_PORT))
+        print("Connected to server.")
+    except Exception as e:
+        print(f"Error connecting to server: {e}")
+        return
 
     def send_request():
         while True:
