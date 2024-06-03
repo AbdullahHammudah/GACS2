@@ -21,7 +21,7 @@ def handle_client(client_socket):
     global speaking_client
     while True:
         try:
-            data = client_socket.recv(512)
+            data = client_socket.recv(1024)
             if not data:
                 break
             if speaking_client is None or speaking_client == client_socket:
