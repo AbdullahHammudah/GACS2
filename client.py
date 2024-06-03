@@ -15,12 +15,6 @@ RATE = 44100
 # Initialize PyAudio
 p = pyaudio.PyAudio()
 
-def send_command(command):
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((SERVER_HOST, SERVER_PORT))
-    client_socket.sendall(command.encode())
-    client_socket.close()
-
 def start_voice():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER_HOST, SERVER_PORT))
@@ -40,16 +34,7 @@ def start_voice():
     client_socket.close()
 
 def start_client():
-    while True:
-        command = input("Type 'S' to request to speak or 'F' to finish speaking: ")
-        send_command(command)
-        if command == "S":
-            response = input("Press Enter to start speaking: ")
-            if response == "":
-                threading.Thread(target=start_voice).start()
-                break  # Exit loop after starting voice communication
-        elif command == "F":
-            break
+    threading.Thread(target=start_voice).start()
 
 if __name__ == "__main__":
     start_client()
