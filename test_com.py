@@ -65,5 +65,5 @@ if __name__ == "__main__":
     receive_ip = '192.168.10.2'
     receive_port = 9999
 
-    chat = AudioChat(send_ip, send_port, receive_ip, receive_port)
+    chat = GACS2(send_ip, send_port, receive_ip, receive_port)
     chat.run()
