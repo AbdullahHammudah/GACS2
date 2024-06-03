@@ -13,7 +13,7 @@ def broadcast(data, except_client=None):
     for client in clients:
         if client != except_client:
             try:
-                client.sendall(data)
+                client.sendall(data.encode())
             except Exception as e:
                 print(f"Error sending data to client: {e}")
                 clients.remove(client)
@@ -22,25 +22,19 @@ def handle_client(client_socket):
     global speaking_client
     while True:
         try:
-            request = client_socket.recv(1024).decode()
-            if not request:
+            data = client_socket.recv(1024).decode()
+            if not data:
                 break
 
-            if request == "SPEAK":
-                with speaking_lock:
-                    if speaking_client is None:
-                        speaking_client = client_socket
-                        client_socket.sendall(b"ALLOW")
-                    else:
-                        client_socket.sendall(b"WAIT")
-            
-            elif request == "FINISH":
-                with speaking_lock:
-                    if speaking_client == client_socket:
-                        speaking_client = None
-            
-            elif speaking_client == client_socket:
-                broadcast(request.encode(), except_client=client_socket)
+            with speaking_lock:
+                if data == "SPEAK" and (speaking_client is None or speaking_client == client_socket):
+                    speaking_client = client_socket
+                    broadcast("START_SPEAK", except_client=client_socket)
+                elif data == "FINISH" and speaking_client == client_socket:
+                    speaking_client = None
+                    broadcast("END_SPEAK")
+                else:
+                    client_socket.sendall(b'WAIT')  # Notify client to wait
         except Exception as e:
             print(f"Client connection error: {e}")
             break
