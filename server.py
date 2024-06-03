@@ -5,7 +5,7 @@ import threading
 HOST = '0.0.0.0'  # Listen on all interfaces
 PORT = 5000
 
-clients = []
+clients = ['192.168.10.3', '192.168.10.4']
 
 def broadcast(data, except_client=None):
     for client in clients:
