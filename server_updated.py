@@ -27,24 +27,24 @@ def start_voice_connection(voice_connection):
 def end_voice_connection(voice_connection):
     voice_connection.close()
 
-def permission_control(control_connection,voice_connection, client_addr):
+def permission_control(control_connection,voice_connection):
     global speaking_client
     request = control_connection.recv(1024).decode().strip()
     if request == 'S':
         if speaking_client is None:
             speaking_client = voice_connection
-            control_connection.send("Permission granited to speak")
+            control_connection.send(b"Permission granited to speak")
             start_voice_connection(voice_connection)
 
     elif request == 'F':
         if speaking_client == voice_connection:
             speaking_client = None
-            control_connection.send("Speaking is Over")
+            control_connection.send(b"Speaking is Over")
             end_voice_connection()
 
 
     elif speaking_client is not None:
-        control_connection.send("Please wait, voice channel is occupied")
+        control_connection.send(b"Please wait, voice channel is occupied")
 
 speaking_client = None
 
@@ -55,6 +55,7 @@ def start_server():
     print(f"Server listening on {HOST}:{C_PORT}")
     voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     voice_socket.bind((HOST, V_PORT))
+    voice_socket.listen(5)
 
 
 
