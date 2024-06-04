@@ -16,18 +16,17 @@ RATE = 44100
 # Initialize PyAudio
 p = pyaudio.PyAudio()
 
-def control (control_socket, voice_socket):
+def control(control_socket, voice_socket):
     while True:
         command = input("Enter command (S/F): ").strip().upper()
         if command == 'S' or command == 'F':
             control_socket.send(command.encode())
             response = control_socket.recv(1024).decode()
             print(response)
-            if response == "Permission granited to speak":
+            if response == "Permission granted to speak":
                 threading.Thread(target=record_and_send, args=(voice_socket,)).start()
         else:
             print("Invalid command. Please enter 'S' or 'F'.")
-
 
 def record_and_send(voice_socket):
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
@@ -39,7 +38,7 @@ def record_and_send(voice_socket):
         except Exception as e:
             print(f"Error recording and sending data: {e}")
             break
-
+    stream.close()
 
 def receive_and_play(voice_socket):
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, output=True, frames_per_buffer=CHUNK)
@@ -49,25 +48,23 @@ def receive_and_play(voice_socket):
             data = voice_socket.recv(CHUNK)
             if not data:
                 break
-            print("Playing data...")
             stream.write(data)
         except Exception as e:
             print(f"Error receiving data: {e}")
             break
-
     stream.close()
 
 def start_client():
     voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     voice_socket.connect((SERVER_HOST, VOICE_PORT))
-    print("Connected to server.")
+    print("Connected to voice server.")
 
     control_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     control_socket.connect((SERVER_HOST, CONTROL_PORT))
+    print("Connected to control server.")
 
-    control (control_socket, voice_socket)
-
-    receive_and_play(voice_socket)
+    threading.Thread(target=receive_and_play, args=(voice_socket,)).start()
+    control(control_socket, voice_socket)
 
 if __name__ == "__main__":
     start_client()
