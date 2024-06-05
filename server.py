@@ -1,74 +1,70 @@
 import socket
 import threading
-import pyaudio
 
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 44100
-CHUNK = 1024
+# Server configuration
+SERVER = "192.168.10.2"
+PORT_C = 5050
+PORT_V = 5051
+ADDR_CONTROL = (SERVER, PORT_C)
+ADDR_VOICE = (SERVER, PORT_V)
+FORMAT = "utf-8"
 
-speaking_client = None
 clients = []
+speaking_client = None
 
-def handle_audio_stream(client_socket):
-    p = pyaudio.PyAudio()
-    stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, output=True, frames_per_buffer=CHUNK)
-    
-    while True:
-        try:
-            data = client_socket.recv(CHUNK)
-            if not data:
-                break
-            if speaking_client == client_socket:
-                for client in clients:
-                    if client != client_socket:
-                        client.sendall(data)
-        except Exception as e:
-            print("Audio stream error:", e)
-            break
-    
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+control_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+control_server.bind(ADDR_CONTROL)
+voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+voice_socket.bind(ADDR_VOICE)
 
-def handle_client(client_socket, client_address):
+def broadcast(data, except_client=None):
+    for client in clients:
+        if client != except_client:
+            try:
+                client.sendall(data)
+            except Exception as e:
+                print(f"Error sending data to client: {e}")
+                clients.remove(client)
+
+def start_voice_channel (control_addr, stop_event):
+    while not stop_event.is_set():
+        voice_conn, voice_addr = voice_socket.accept()
+        if control_addr[0] == voice_addr[0]:
+            voice_connection = True
+            while voice_connection:
+                voice_data = voice_conn.recv(1024)
+                broadcast(voice_data, except_client=voice_conn)
+
+def handle_client (control_conn, control_addr):
     global speaking_client
-    clients.append(client_socket)
-    audio_thread = threading.Thread(target=handle_audio_stream, args=(client_socket,))
-    audio_thread.start()
-    
+    print(f"[NEW CONNECTION] {control_addr} connected.")
+
+    connected = True
+    while connected:
+        control_msg = control_conn.recv(1024).decode(FORMAT)
+        print(f"[{control_addr}] {control_msg}")
+        if control_msg == 'S' and speaking_client == None:
+            control_conn.send(b"Permission to speak granted")
+            speaking_client = control_conn
+            stop_event = threading.Event()
+            voice_thread = threading.Thread(target=start_voice_channel, args=(control_addr, stop_event))
+            voice_thread.start()
+
+        elif control_msg == 'F':
+            control_conn.send(b"Speaking is Over")
+            stop_event.set()
+            voice_thread.join()
+            control_conn.send(b"Voice connection has been closed")
+
+def start():
+    control_server.listen()
+    voice_socket.listen()
+    print(f"[LISTENING] Server is listening on {SERVER}")
     while True:
-        data = client_socket.recv(1024)
-        if not data:
-            break
-        try:
-            request = data.decode().strip()
-            if request == 'S':
-                if speaking_client is None:
-                    speaking_client = client_socket
-                    client_socket.send("Permission granted. You can speak now.".encode())
-                else:
-                    client_socket.send("Another client is speaking. Please wait.".encode())
-            elif request == 'F':
-                if speaking_client == client_socket:
-                    speaking_client = None
-                    client_socket.send("You finished speaking. Waiting for next speaker.".encode())
-                else:
-                    client_socket.send("You are not the current speaker.".encode())
-            else:
-                client_socket.send("Invalid command.".encode())
-        except UnicodeDecodeError as e:
-            print("Decoding error:", e)
-            continue
+        control_conn, control_addr = control_server.accept()
+        threading.Thread(target=handle_client, args=(control_conn, control_addr)).start()
+        clients.append(control_conn)
+        print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 
-    client_socket.close()
-    clients.remove(client_socket)
-
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(('0.0.0.0', 9999))
-server.listen(5)
-
-while True:
-    client_socket, client_address = server.accept()
-    client_handler = threading.Thread(target=handle_client, args=(client_socket, client_address))
-    client_handler.start()
+print("[STARTING] server is starting...")
+start()

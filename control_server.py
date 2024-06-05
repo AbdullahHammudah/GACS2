@@ -1,10 +1,14 @@
 import socket
 import threading
 
+# Server configuration
 SERVER = "192.168.10.2"
 PORT = 5050
 ADDR = (SERVER, PORT)
 FORMAT = "utf-8"
+
+clients = []
+speaking_client = None
 
 control_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 control_server.bind(ADDR)
@@ -18,6 +22,7 @@ def handle_client(conn, addr):
         print(f"[{addr}] {control_msg}")
         if control_msg == 'S':
             conn.send(b"Permission to speak granted")
+            
         elif control_msg == 'F':
             conn.send(b"Speaking is Over")
             
