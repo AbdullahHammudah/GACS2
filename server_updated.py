@@ -19,7 +19,7 @@ def broadcast(data, except_client=None):
                 print(f"Error sending data to client: {e}")
                 clients.remove(client)
 
-def start_voice_connection(voice_connection):
+def handle_voice(voice_connection):
     while True:
         try:
             data = voice_connection.recv(1024)
@@ -31,7 +31,7 @@ def start_voice_connection(voice_connection):
             break
     voice_connection.close()
 
-def permission_control(control_connection, voice_connection):
+def handle_control(control_connection, voice_connection):
     global speaking_client
     while True:
         try:
@@ -41,7 +41,7 @@ def permission_control(control_connection, voice_connection):
                     if speaking_client is None:
                         speaking_client = voice_connection
                         control_connection.send(b"Permission granted to speak")
-                        start_voice_connection(voice_connection)
+                        handle_voice(voice_connection)
                     else:
                         control_connection.send(b"Please wait, voice channel is occupied")
             elif request == 'F':
@@ -49,7 +49,6 @@ def permission_control(control_connection, voice_connection):
                     if speaking_client == voice_connection:
                         speaking_client = None
                         control_connection.send(b"Speaking is over")
-                        voice_connection.close()
                         break
                     else:
                         control_connection.send(b"You are not the current speaker")
@@ -57,6 +56,7 @@ def permission_control(control_connection, voice_connection):
             print(f"Error handling control command: {e}")
             break
     control_connection.close()
+    voice_connection.close()
 
 def start_server():
     control_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -73,8 +73,8 @@ def start_server():
         control_connection, addr = control_socket.accept()
         voice_connection, addr = voice_socket.accept()
         print(f"Connection from {addr}")
-        clients.append(control_connection) 
-        threading.Thread(target=permission_control, args=(control_connection, voice_connection)).start()
+        clients.append(control_connection)
+        threading.Thread(target=handle_control, args=(control_connection, voice_connection)).start()
 
 if __name__ == "__main__":
     start_server()
