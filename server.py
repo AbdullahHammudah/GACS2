@@ -52,6 +52,7 @@ def handle_client (control_conn, control_addr):
 
         elif control_msg == 'F':
             control_conn.send(b"Speaking is Over")
+            speaking_client = None
             stop_event.set()
             voice_thread.join()
             control_conn.send(b"Voice connection has been closed")
