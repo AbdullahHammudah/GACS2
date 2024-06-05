@@ -10,16 +10,16 @@ control_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 control_server.bind(ADDR)
 
 def handle_client(conn, addr):
-    print(f"[NEW CONNECTION] {addr} connrcted.")
+    print(f"[NEW CONNECTION] {addr} connected.")
     
     connected = True
     while connected:
         control_msg = conn.recv(1024).decode(FORMAT)
         print(f"[{addr}] {control_msg}")
         if control_msg == 'S':
-            conn.send("Permission to speak granted").encode(FORMAT)
+            conn.send(b"Permission to speak granted")
         elif control_msg == 'F':
-            conn.send("Speaking is Over").encode(FORMAT)
+            conn.send(b"Speaking is Over")
             
 
 def start():
@@ -28,7 +28,7 @@ def start():
     while True:
         conn, addr = control_server.accept()
         threading.Thread(target=handle_client, args=(conn, addr)).start()
-        print(f"[ACTIVE CONNECTIONS] {threading.activeCount() - 1}")
+        print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 
 
 print("[STARTING] server is starting...")

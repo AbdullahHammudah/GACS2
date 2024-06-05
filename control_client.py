@@ -1,4 +1,5 @@
 import socket
+import time
 
 SERVER = "192.168.10.2"
 PORT = 5050
@@ -11,5 +12,10 @@ control_client.connect(ADDR)
 def send_command():
     while True:
         control_command = input("Enter command (S/F): ").strip().upper()
-        response = control_client.send(control_command).encode(FORMAT)
+        encoded_control_command = control_command.encode(FORMAT)
+        control_client.send(encoded_control_command)
+        time.sleep(0.2)
+        response = control_client.recv(1024).decode(FORMAT)
         print(response)
+
+send_command()
