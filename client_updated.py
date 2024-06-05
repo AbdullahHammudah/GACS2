@@ -24,12 +24,14 @@ def control(control_socket, voice_socket):
     while True:
         command = input("Enter command (S/F): ").strip().upper()
         if command == 'S' or command == 'F':
+            # To-Do : threading send_speak_request()
             control_socket.send(command.encode())
             response = control_socket.recv(1024).decode()
             print(response)
             if response == "Permission granted to speak":
                 is_recording.set()  # Set the event to start recording
                 threading.Thread(target=record_and_send, args=(voice_socket,)).start()
+                # To-Do : if 'F' close the thread and the voice socket
             elif command == 'F':
                 is_recording.clear()  # Clear the event to stop recording
         else:
@@ -48,7 +50,7 @@ def record_and_send(voice_socket):
     stream.stop_stream()
     stream.close()
     print("Recording stopped.")
-
+# To-Do: reveice and play should be runing continuesly on seperated thread
 def receive_and_play(voice_socket):
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, output=True, frames_per_buffer=CHUNK)
     print("Receiving and playing...")
@@ -63,7 +65,7 @@ def receive_and_play(voice_socket):
             break
     stream.stop_stream()
     stream.close()
-
+# To-Do : this function tho be reconstructed or completly demolished
 def start_client():
     voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     voice_socket.connect((SERVER_HOST, VOICE_PORT))
