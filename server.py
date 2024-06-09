@@ -2,7 +2,7 @@ import socket
 import threading
 
 # Server configuration
-SERVER = "192.168.10.2"
+SERVER = "127.0.0.1"
 PORT_C = 5050
 PORT_V = 5051
 ADDR_CONTROL = (SERVER, PORT_C)
