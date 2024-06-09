@@ -23,7 +23,6 @@ def record_and_send(voice_socket):
     print("Recording and sending...")
     while True:
         data = stream.read(CHUNK, exception_on_overflow=False)
-        print("Sending data...")
         voice_socket.sendall(data)
 
 def receive_and_play(voice_socket):

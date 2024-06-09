@@ -38,20 +38,25 @@ def handle_client (control_conn, control_addr, voice_conn, voice_addr):
     print(f"[CONTROL CONNECTION] Client {control_addr} has establised Contol Connection")
     print(f"[VOICE CONNECTION] Client {voice_addr} has establised Voice Connection")
 
-    connected = True
-    while connected:
-        control_msg = control_conn.recv(1024).decode(FORMAT)
-        print(f"[{control_addr}] {control_msg}")
-        if control_msg == 'S' and speaking_client == None:
-            control_conn.send(b"Permission to speak granted")
-            speaking_client = control_conn
-            voice_thread = threading.Thread(target=start_voice_channel, args=(control_addr, voice_conn, voice_addr))
-            voice_thread.start()
+   
+    try: 
+        connected = True
+        while connected:
+            control_msg = control_conn.recv(1024).decode(FORMAT)
+            print(f"[{control_addr}] {control_msg}")
+            if control_msg == 'S' and speaking_client == None:
+                control_conn.send(b"Permission to speak granted")
+                speaking_client = control_conn
+                voice_thread = threading.Thread(target=start_voice_channel, args=(control_addr, voice_conn, voice_addr))
+                voice_thread.start()
 
-        elif control_msg == 'F':
-            control_conn.send(b"Speaking is Over")
-            speaking_client = None
-            control_conn.send(b"Voice connection has been closed")
+            elif control_msg == 'F':
+                control_conn.send(b"Speaking is Over")
+                speaking_client = None
+                control_conn.send(b"Voice connection has been closed")
+    except Exception as e:
+        print(f"Connection Problem {e}")
+
 
 def start():
     control_socket.listen()
