@@ -12,8 +12,8 @@ FORMAT = "utf-8"
 clients = []
 speaking_client = None
 
-control_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-control_server.bind(ADDR_CONTROL)
+control_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+control_socket.bind(ADDR_CONTROL)
 voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 voice_socket.bind(ADDR_VOICE)
 
@@ -26,18 +26,17 @@ def broadcast(data, except_client=None):
                 print(f"Error sending data to client: {e}")
                 clients.remove(client)
 
-def start_voice_channel (control_addr, stop_event):
-    while not stop_event.is_set():
-        voice_conn, voice_addr = voice_socket.accept()
-        if control_addr[0] == voice_addr[0]:
-            voice_connection = True
-            while voice_connection:
-                voice_data = voice_conn.recv(1024)
-                broadcast(voice_data, except_client=voice_conn)
+def start_voice_channel (control_addr, voice_conn, voice_addr):
+    if control_addr[0] == voice_addr[0]:
+        voice_connection = True
+        while voice_connection:
+            voice_data = voice_conn.recv(1024)
+            broadcast(voice_data, except_client=voice_conn)
 
-def handle_client (control_conn, control_addr):
+def handle_client (control_conn, control_addr, voice_conn, voice_addr):
     global speaking_client
-    print(f"[NEW CONNECTION] {control_addr} connected.")
+    print(f"[CONTROL CONNECTION] Client {control_addr} has establised Contol Connection")
+    print(f"[VOICE CONNECTION] Client {voice_addr} has establised Voice Connection")
 
     connected = True
     while connected:
@@ -46,25 +45,23 @@ def handle_client (control_conn, control_addr):
         if control_msg == 'S' and speaking_client == None:
             control_conn.send(b"Permission to speak granted")
             speaking_client = control_conn
-            stop_event = threading.Event()
-            voice_thread = threading.Thread(target=start_voice_channel, args=(control_addr, stop_event))
+            voice_thread = threading.Thread(target=start_voice_channel, args=(control_addr, voice_conn, voice_addr))
             voice_thread.start()
 
         elif control_msg == 'F':
             control_conn.send(b"Speaking is Over")
             speaking_client = None
-            stop_event.set()
-            voice_thread.join()
             control_conn.send(b"Voice connection has been closed")
 
 def start():
-    control_server.listen()
+    control_socket.listen()
     voice_socket.listen()
     print(f"[LISTENING] Server is listening on {SERVER}")
     while True:
-        control_conn, control_addr = control_server.accept()
-        threading.Thread(target=handle_client, args=(control_conn, control_addr)).start()
-        clients.append(control_conn)
+        control_conn, control_addr = control_socket.accept()
+        voice_conn, voice_addr = voice_socket.accept()
+        threading.Thread(target=handle_client, args=(control_conn, control_addr, voice_conn, voice_addr)).start()
+        clients.append(voice_conn)
         print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 
 print("[STARTING] server is starting...")
