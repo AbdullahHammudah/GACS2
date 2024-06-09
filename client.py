@@ -7,6 +7,7 @@ import time
 SERVER_HOST = '192.168.10.2'
 CONTROL_PORT = 5050
 VOICE_PORT = 5051
+S_FORMAT = 'utf-8'
 
 # Audio configuration
 CHUNK = 1024
@@ -43,10 +44,10 @@ def control_speaking(control_socket, voice_socket):
     while True:
         control_command = input("Enter command (S/F): ").strip().upper()
         if control_command == "S":
-            encoded_control_command = control_command.encode(FORMAT)
+            encoded_control_command = control_command.encode(S_FORMAT)
             control_socket.send(encoded_control_command)
             time.sleep(0.2)
-            response = control_socket.recv(1024).decode(FORMAT)
+            response = control_socket.recv(1024).decode(S_FORMAT)
             print(response)
             if response == "Permission to speak granted":
                 threading.Thread(target=record_and_send, args=(voice_socket,)).start()
@@ -61,7 +62,7 @@ def start_voice_connection():
     voice_socket.connect((SERVER_HOST, VOICE_PORT))
     print(f"[VOICE CONNECTION] Voice Channel Connected to {SERVER_HOST, VOICE_PORT}.")
 
-    threading.Thread(target=receive_and_play, args=(voice_socket)).start()
+    threading.Thread(target=receive_and_play, args=(voice_socket,)).start()
     print(f"[VOICE CONNECTION] Listening for incoming voice communications...")
 
     return voice_socket
