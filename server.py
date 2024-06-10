@@ -26,12 +26,19 @@ def broadcast(data, except_client=None):
                 print(f"Error sending data to client: {e}")
                 clients.remove(client)
 
-def start_voice_channel (control_addr, voice_conn, voice_addr):
+def start_voice_channel(control_addr, voice_conn, voice_addr):
     if control_addr[0] == voice_addr[0]:
         voice_connection = True
         while voice_connection:
-            voice_data = voice_conn.recv(1024)
-            broadcast(voice_data, except_client=voice_conn)
+            try:
+                voice_data = voice_conn.recv(1024)
+                if not voice_data:
+                    break
+                broadcast(voice_data, except_client=voice_conn)
+            except Exception as e:
+                print(f"Client Finsihed Speaking {voice_addr}: {e}")
+                break
+
 
 def handle_client (control_conn, control_addr, voice_conn, voice_addr):
     global speaking_client
