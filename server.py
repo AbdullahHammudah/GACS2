@@ -8,6 +8,7 @@ PORT_V = 5051
 ADDR_CONTROL = (SERVER, PORT_C)
 ADDR_VOICE = (SERVER, PORT_V)
 FORMAT = "utf-8"
+CHUNK = 1024
 
 clients = []
 speaking_client = None
@@ -32,7 +33,7 @@ def start_voice_channel(control_addr):
     if control_addr[0]:
         while not close_voice_connection:
             try:
-                voice_data = voice_socket.recvfrom(1024)
+                voice_data = voice_socket.recvfrom(CHUNK * 2)
                 if not voice_data:
                     break
                 broadcast(voice_data,)
