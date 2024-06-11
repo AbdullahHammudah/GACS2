@@ -32,12 +32,12 @@ def start_voice_channel(control_addr):
     if control_addr[0]:
         while not close_voice_connection:
             try:
-                voice_data, client_addr = voice_socket.recvfrom(1024)
+                voice_data = voice_socket.recvfrom(1024)
                 if not voice_data:
                     break
-                broadcast(voice_data, except_client=client_addr)
+                broadcast(voice_data,)
             except Exception as e:
-                print(f"Client Finished Speaking {client_addr}: {e}")
+                print(f"Client Finished Speaking : {e}")
                 break
 
 def handle_client(control_conn, control_addr):
