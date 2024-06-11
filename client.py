@@ -51,6 +51,7 @@ def control_speaking(control_socket, voice_socket):
     while True:
         control_command = input("Enter command (S/F): ").strip().upper()
         if control_command == "S":
+            close_microphone = False
             encoded_control_command = control_command.encode(S_FORMAT)
             control_socket.send(encoded_control_command)
             time.sleep(0.2)
