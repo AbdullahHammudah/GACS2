@@ -4,7 +4,7 @@ import pyaudio
 import time
 
 # Client configuration
-SERVER_HOST = '192.168.10.2'
+SERVER_HOST = '127.0.0.1'
 CONTROL_PORT = 5050
 VOICE_PORT = 5051
 S_FORMAT = 'utf-8'
@@ -24,7 +24,7 @@ def record_and_send(voice_socket):
     while True:
         try:
             data = stream.read(CHUNK, exception_on_overflow=False)
-            voice_socket.sendto(data, (SERVER_HOST, VOICE_PORT))
+            # voice_socket.sendto(data, (SERVER_HOST, VOICE_PORT))
         except (OSError, ConnectionAbortedError):
             break
     stream.close()
@@ -65,8 +65,9 @@ def control_speaking(control_socket, voice_socket):
             # control_speaking(control_socket, new_voice_socket)
 
 def start_voice_connection():
-    voice_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    print(f"[VOICE CONNECTION] Voice Channel Ready to send to {SERVER_HOST, VOICE_PORT}.")
+    voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    voice_socket.connect((SERVER_HOST, VOICE_PORT))
+    print(f"[VOICE CONNECTION] Voice Channel Connected to {SERVER_HOST, VOICE_PORT}.")
 
     threading.Thread(target=receive_and_play, args=(voice_socket,)).start()
     print(f"[VOICE CONNECTION] Listening for incoming voice communications...")
