@@ -4,7 +4,7 @@ import pyaudio
 import time
 
 # Client configuration
-SERVER_HOST = '192.168.10.2'
+SERVER_HOST = '127.0.0.1'
 CONTROL_PORT = 5050
 VOICE_PORT = 5051
 S_FORMAT = 'utf-8'
@@ -59,11 +59,10 @@ def control_speaking(control_socket, voice_socket):
             time.sleep(0.2)
             response = control_socket.recv(1024).decode(S_FORMAT)
             print(response)
-            if response == "Speaking is Over":
-                print("Speaking is Over")
-            voice_socket.close()
-            new_voice_socket = start_voice_connection()
-            control_speaking(control_socket, new_voice_socket)
+
+            # voice_socket.close()
+            # new_voice_socket = start_voice_connection()
+            # control_speaking(control_socket, new_voice_socket)
 
 def start_voice_connection():
     voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
