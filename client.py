@@ -4,7 +4,7 @@ import pyaudio
 import time
 
 # Client configuration
-SERVER_HOST = '127.0.0.1'
+SERVER_HOST = '192.168.10.2'
 CONTROL_PORT = 5050
 VOICE_PORT = 5051
 S_FORMAT = 'utf-8'
@@ -15,16 +15,20 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 
+close_microphone = False
 # Initialize PyAudio
 p = pyaudio.PyAudio()
 
 def record_and_send(voice_socket):
+    global close_microphone
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
     print("Recording and sending...")
     while True:
         try:
+            if close_microphone:
+                break
             data = stream.read(CHUNK, exception_on_overflow=False)
-            # voice_socket.sendto(data, (SERVER_HOST, VOICE_PORT))
+            voice_socket.sendall(data)
         except (OSError, ConnectionAbortedError):
             break
     stream.close()
@@ -34,7 +38,7 @@ def receive_and_play(voice_socket):
     print("Receiving and playing...")
     while True:
         try:
-            data, _ = voice_socket.recvfrom(1024)  # Adjust buffer size if necessary
+            data = voice_socket.recv(CHUNK)
             if not data:
                 break
             stream.write(data)
@@ -43,6 +47,7 @@ def receive_and_play(voice_socket):
     stream.close()
 
 def control_speaking(control_socket, voice_socket):
+    global close_microphone
     while True:
         control_command = input("Enter command (S/F): ").strip().upper()
         if control_command == "S":
@@ -54,6 +59,7 @@ def control_speaking(control_socket, voice_socket):
             if response == "Permission to speak granted":
                 threading.Thread(target=record_and_send, args=(voice_socket,)).start()
         elif control_command == "F":
+            close_microphone = True
             encoded_control_command = control_command.encode(S_FORMAT)
             control_socket.send(encoded_control_command)
             time.sleep(0.2)
@@ -65,7 +71,8 @@ def control_speaking(control_socket, voice_socket):
             # control_speaking(control_socket, new_voice_socket)
 
 def start_voice_connection():
-    voice_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    voice_socket.connect((SERVER_HOST, VOICE_PORT))
     print(f"[VOICE CONNECTION] Voice Channel Connected to {SERVER_HOST, VOICE_PORT}.")
 
     threading.Thread(target=receive_and_play, args=(voice_socket,)).start()
