@@ -3,6 +3,8 @@ import threading
 import pyaudio
 import time
 
+# Version 0.9 - Core Functionality
+
 # Client configuration
 SERVER_HOST = '192.168.10.2'
 CONTROL_PORT = 5050

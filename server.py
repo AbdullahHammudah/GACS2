@@ -1,6 +1,8 @@
 import socket
 import threading
 
+# Version 0.9 - Core Functionality
+
 # Server configuration
 SERVER = "192.168.10.2"
 PORT_C = 5050
