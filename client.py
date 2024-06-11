@@ -65,8 +65,7 @@ def control_speaking(control_socket, voice_socket):
             # control_speaking(control_socket, new_voice_socket)
 
 def start_voice_connection():
-    voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    voice_socket.connect((SERVER_HOST, VOICE_PORT))
+    voice_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     print(f"[VOICE CONNECTION] Voice Channel Connected to {SERVER_HOST, VOICE_PORT}.")
 
     threading.Thread(target=receive_and_play, args=(voice_socket,)).start()
