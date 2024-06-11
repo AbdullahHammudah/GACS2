@@ -6,7 +6,7 @@ import time
 # Version 0.9 - Core Functionality
 
 # Client configuration
-SERVER_HOST = '192.168.10.2'
+SERVER_HOST = '127.0.0.1'
 CONTROL_PORT = 5050
 VOICE_PORT = 5051
 S_FORMAT = 'utf-8'
@@ -24,7 +24,7 @@ p = pyaudio.PyAudio()
 def record_and_send(voice_socket):
     global close_microphone
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
-    print("Recording and sending...")
+    # print("Recording and sending...")
     while True:
         try:
             if close_microphone:
@@ -37,7 +37,7 @@ def record_and_send(voice_socket):
 
 def receive_and_play(voice_socket):
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, output=True, frames_per_buffer=CHUNK)
-    print("Receiving and playing...")
+    # print("Receiving and playing...")
     while True:
         try:
             data = voice_socket.recv(CHUNK)
@@ -53,13 +53,13 @@ def control_speaking(control_socket, voice_socket):
     while True:
         control_command = input("Enter command (S/F): ").strip().upper()
         if control_command == "S":
-            close_microphone = False
             encoded_control_command = control_command.encode(S_FORMAT)
             control_socket.send(encoded_control_command)
             time.sleep(0.2)
             response = control_socket.recv(1024).decode(S_FORMAT)
             print(response)
             if response == "Permission to speak granted":
+                close_microphone = False
                 threading.Thread(target=record_and_send, args=(voice_socket,)).start()
         elif control_command == "F":
             close_microphone = True

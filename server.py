@@ -4,7 +4,7 @@ import threading
 # Version 0.9 - Core Functionality
 
 # Server configuration
-SERVER = "192.168.10.2"
+SERVER = "127.0.0.1"
 PORT_C = 5050
 PORT_V = 5051
 ADDR_CONTROL = (SERVER, PORT_C)
@@ -64,10 +64,12 @@ def handle_client (control_conn, control_addr, voice_conn, voice_addr):
                 close_voice_connection = False
                 voice_thread = threading.Thread(target=start_voice_channel, args=(control_addr, voice_conn, voice_addr))
                 voice_thread.start()
+            elif control_msg == 'S' and speaking_client != None:
+                control_conn.send(b"Channel Is Occupied, Someone is speaking, Listen Idiot!")
 
 
             elif control_msg == 'F':
-                control_conn.send(b"Speaking is Over")
+                control_conn.send(b"Speaking is Over, ")
                 speaking_client = None
                 close_voice_connection = True
                 voice_thread.join()
