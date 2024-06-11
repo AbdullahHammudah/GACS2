@@ -8,7 +8,6 @@ PORT_V = 5051
 ADDR_CONTROL = (SERVER, PORT_C)
 ADDR_VOICE = (SERVER, PORT_V)
 FORMAT = "utf-8"
-CHUNK = 1024
 
 clients = []
 speaking_client = None
@@ -33,7 +32,7 @@ def start_voice_channel(control_addr):
     if control_addr[0]:
         while not close_voice_connection:
             try:
-                voice_data = voice_socket.recvfrom(CHUNK * 2)
+                voice_data = voice_socket.recvfrom(1024)
                 if not voice_data:
                     break
                 broadcast(voice_data,)
@@ -72,6 +71,8 @@ def start():
     print(f"[LISTENING] Server is listening on {SERVER}")
     while True:
         control_conn, control_addr = control_socket.accept()
+        voice_addr = (control_addr[0], PORT_V)
+        clients.append(voice_addr)
         threading.Thread(target=handle_client, args=(control_conn, control_addr)).start()
         print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 

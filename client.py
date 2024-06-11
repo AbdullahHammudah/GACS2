@@ -34,7 +34,7 @@ def receive_and_play(voice_socket):
     print("Receiving and playing...")
     while True:
         try:
-            data, _ = voice_socket.recvfrom(CHUNK * 2)  # Adjust buffer size if necessary
+            data, _ = voice_socket.recvfrom(1024)  # Adjust buffer size if necessary
             if not data:
                 break
             stream.write(data)
