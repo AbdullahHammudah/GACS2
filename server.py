@@ -68,7 +68,7 @@ def handle_client (control_conn, control_addr, voice_conn, voice_addr):
                 control_conn.send(b"Channel Is Occupied, Someone is speaking, Listen Idiot!")
 
 
-            elif control_msg == 'F':
+            elif control_msg == 'F' and control_addr[0] == voice_addr[0]:
                 control_conn.send(b"Speaking is Over, ")
                 speaking_client = None
                 close_voice_connection = True
