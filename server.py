@@ -65,15 +65,18 @@ def handle_client (control_conn, control_addr, voice_conn, voice_addr):
                 voice_thread = threading.Thread(target=start_voice_channel, args=(control_addr, voice_conn, voice_addr))
                 voice_thread.start()
             elif control_msg == 'S' and speaking_client != None:
-                control_conn.send(b"Channel Is Occupied, Someone is speaking, Listen Idiot!")
+                control_conn.send(b"Channel Is Occupied, Someone is already speaking...")
 
 
-            elif control_msg == 'F' and control_addr[0] == voice_addr[0]:
-                control_conn.send(b"Speaking is Over, ")
-                speaking_client = None
-                close_voice_connection = True
-                voice_thread.join()
-                control_conn.send(b"Voice connection has been closed")
+            elif control_msg == 'F':
+                if speaking_client == control_conn:
+                    control_conn.send(b"Speaking is Over, ")
+                    speaking_client = None
+                    close_voice_connection = True
+                    voice_thread.join()
+                    control_conn.send(b"Voice connection has been closed")
+                else:
+                    control_conn.send(b"You are not the one speaking, Try request to speak later...")
     except Exception as e:
         print(f"Connection Problem {e}")
 
